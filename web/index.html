@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MQGA 注入器</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <div class="logo">MG</div>
+      <div class="brand-text">
+        <h1>MQGA 注入器</h1>
+        <div class="ver">C++ · WebView2 · 640KB</div>
+      </div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-page="dash"><span class="ico">▣</span><span>仪表盘</span></button>
+      <button class="nav-item" data-page="host"><span class="ico">⬢</span><span>宿主管理</span></button>
+      <button class="nav-item" data-page="plugins"><span class="ico">◈</span><span>插件</span></button>
+      <button class="nav-item" data-page="logs"><span class="ico">◫</span><span>日志</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="dot-mini" id="footDot"></div>
+      <span id="footText">就绪</span>
+    </div>
+  </div>
+
+  <div id="main">
+    <header id="topbar">
+      <div class="status-wrap">
+        <div class="status-ring" id="ring"><span class="ring-dot" id="ringDot"></span></div>
+        <div class="status-texts">
+          <div id="statusText">空闲</div>
+          <div id="progressText" class="progress-text"></div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn ghost sm" id="btnLocate">自动检测 QQ</button>
+        <button class="btn primary sm" id="btnLaunchQq">启动 QQ</button>
+      </div>
+    </header>
+
+    <main id="content">
+      <!-- 仪表盘 -->
+      <section class="page active" id="page-dash">
+        <div class="grid-2col">
+          <div class="card host-card-wrap">
+            <h2>宿主选择</h2>
+            <div class="host-grid">
+              <div class="host-card selected" data-host="mqga">
+                <div class="host-icon">MQ</div>
+                <div class="host-info">
+                  <h3>MakeQQGreatAgain <span class="tag ok">推荐</span></h3>
+                  <p>QQNT 轻量插件宿主，兼容 LiteLoaderQQNT 插件接口，设置面板完整。</p>
+                  <div class="host-meta">v0.1.2 · 稳定</div>
+                </div>
+              </div>
+              <div class="host-card" data-host="liteloader">
+                <div class="host-icon alt">LL</div>
+                <div class="host-info">
+                  <h3>LiteLoaderQQNT <span class="tag">经典</span></h3>
+                  <p>原版 LiteLoaderQQNT 插件加载器，QQNT 最早的插件生态。</p>
+                  <div class="host-meta">v1.4.1 · 原生</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>路径设置</h2>
+            <div class="fields">
+              <div class="field">
+                <label>宿主源码目录
+                  <button class="btn sm ghost browse" data-kind="hostSourceDir" data-target="hostSourceDir">浏览</button>
+                  <span class="vmark" id="mark-hostSourceDir"></span>
+                </label>
+                <input id="hostSourceDir" placeholder="如 D:\MakeQQGreatAgain-main\MakeQQGreatAgain-main" spellcheck="false">
+                <div class="hint vreason" id="reason-hostSourceDir">git clone 的宿主代码目录；没有就到「宿主管理」下载。</div>
+              </div>
+              <div class="field">
+                <label>宿主安装目录
+                  <button class="btn sm ghost browse" data-kind="installDir" data-target="installDir">浏览</button>
+                  <span class="vmark" id="mark-installDir"></span>
+                </label>
+                <input id="installDir" placeholder="如 D:\LiteLoaderQQNT" spellcheck="false">
+                <div class="hint vreason" id="reason-installDir">宿主会被复制到这里运行。</div>
+              </div>
+              <div class="field">
+                <label>QQ 安装目录
+                  <button class="btn sm ghost browse" data-kind="qqRoot" data-target="qqRoot">浏览</button>
+                  <span class="vmark" id="mark-qqRoot"></span>
+                </label>
+                <input id="qqRoot" placeholder="如 D:\QQNT" spellcheck="false">
+                <div class="hint vreason" id="reason-qqRoot">QQ.exe 所在目录。</div>
+              </div>
+              <div class="field">
+                <label>QQ 版本</label>
+                <select id="version"><option value="">— 先填 QQ 目录 —</option></select>
+                <div class="hint">versions 下的版本目录名。</div>
+              </div>
+            </div>
+            <div class="actions main-actions">
+              <button class="btn primary lg" id="btnInstall"><span class="btn-ico">▶</span>一键安装注入</button>
+              <button class="btn" id="btnDisable">禁用注入</button>
+              <button class="btn success" id="btnEnable">恢复注入</button>
+              <button class="btn danger" id="btnUninstall">卸载</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notice update hidden" id="updateBar">
+          <span class="notice-ico">◔</span>
+          <div>
+            <strong>QQ 已更新</strong>
+            <div id="updateText"></div>
+          </div>
+          <button class="btn sm" id="btnReinject">重新注入</button>
+        </div>
+
+        <div class="card quick-flow">
+          <h2>使用流程</h2>
+          <ol class="flow">
+            <li>退出 QQ（<a href="#" id="linkKillQq">点此退出全部 QQ</a>）</li>
+            <li>「宿主管理」下载宿主</li>
+            <li>确认路径与版本</li>
+            <li>点「一键安装注入」</li>
+            <li>启动 QQ 验证效果</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- 宿主管理 -->
+      <section class="page" id="page-host">
+        <div class="card">
+          <h2>从 GitHub 下载宿主</h2>
+          <p class="hint" style="margin-bottom:14px">内置加速镜像，失败自动回退直连。下载到 <code>data\hosts\</code>，可离线使用。</p>
+          <div class="actions">
+            <button class="btn primary" id="btnDlMqga">下载 MakeQQGreatAgain</button>
+            <button class="btn primary" id="btnDlLiteloader">下载 LiteLoaderQQNT</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>已下载的宿主</h2>
+          <div id="hostList" class="host-list">加载中…</div>
+          <div class="actions">
+            <button class="btn" id="btnOpenHosts">打开宿主目录</button>
+            <button class="btn" id="btnUseDownloaded">使用下载的宿主</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 插件 -->
+      <section class="page" id="page-plugins">
+        <div class="card">
+          <h2>已安装插件</h2>
+          <div id="pluginList" class="plugin-list">宿主安装后自动扫描。</div>
+        </div>
+      </section>
+
+      <!-- 日志 -->
+      <section class="page" id="page-logs">
+        <div class="card">
+          <div class="card-head">
+            <h2>运行日志</h2>
+            <div class="actions">
+              <button class="btn sm" id="btnClearLog">清空</button>
+              <button class="btn sm" id="btnOpenLog">打开目录</button>
+            </div>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
