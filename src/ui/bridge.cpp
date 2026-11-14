@@ -266,6 +266,49 @@ static void ActListPlugins(const std::map<std::wstring, std::wstring>& m)
     PostResult(true, L"插件列表已刷新");
 }
 
+// 工具：生成 preload.js（环境变量注入用）
+static void ActGenPreload(const std::map<std::wstring, std::wstring>&)
+{
+    const std::wstring target = paths::DataDir() + L"preload.js";
+    const char* content = R"PRELOAD(// preload.js - NODE_OPTIONS 注入入口（由 MQGA 注入器生成）
+const fs = require('fs');
+const path = require('path');
+const logFile = path.join(process.env.TEMP || '/tmp', 'mqga-preload.log');
+try {
+    fs.appendFileSync(logFile, '[preload] loaded at ' + new Date().toISOString() + '\n');
+    // TODO: 在这里加载宿主（MakeQQGreatAgain / LiteLoaderQQNT）
+} catch (e) {
+    try { fs.appendFileSync(logFile, '[preload] error: ' + e.message + '\n'); } catch (_) {}
+}
+)PRELOAD";
+    std::wstring err;
+    if (!fsutil::WriteFileAtomic(target, content, err)) {
+        PostResult(false, L"写入失败: " + err);
+        return;
+    }
+    PostResult(true, L"preload.js 已生成: " + target);
+}
+
+// 工具：检测 MinHook 宿主 DLL 是否就绪
+static void ActCheckMinhook(const std::map<std::wstring, std::wstring>&)
+{
+    const std::wstring dll = paths::DataDir() + L"host-minhook.dll";
+    bool ok = fsutil::FileExists(dll);
+    PostEvent("toolStatus", "\"kind\":\"minhook\",\"ready\":" + std::string(ok ? "true" : "false") +
+              ",\"path\":" + su::JsonStr(dll));
+    PostResult(ok, ok ? L"MinHook 宿主 DLL 就绪" : L"缺少 host-minhook.dll（请先编译放入 data 目录）");
+}
+
+// 工具：检测代理 ffmpeg.dll 是否就绪
+static void ActCheckProxy(const std::map<std::wstring, std::wstring>&)
+{
+    const std::wstring dll = paths::DataDir() + L"ffmpeg-proxy.dll";
+    bool ok = fsutil::FileExists(dll);
+    PostEvent("toolStatus", "\"kind\":\"proxy\",\"ready\":" + std::string(ok ? "true" : "false") +
+              ",\"path\":" + su::JsonStr(dll));
+    PostResult(ok, ok ? L"代理 DLL 就绪" : L"缺少 ffmpeg-proxy.dll（请先编译放入 data 目录）");
+}
+
 // 启动 QQ 验证注入效果（防双开：已在运行则提示而非再起一份）
 static void ActLaunchQq(const std::map<std::wstring, std::wstring>& m)
 {
@@ -401,6 +444,9 @@ void HandleMessage(const std::string& utf8Json)
             else if (action == L"killQq")        ActKillQq(m);
             else if (action == L"listPlugins")   ActListPlugins(m);
             else if (action == L"listHosts")     ActListHosts(m);
+            else if (action == L"genPreload")    ActGenPreload(m);
+            else if (action == L"checkMinhook")  ActCheckMinhook(m);
+            else if (action == L"checkProxy")    ActCheckProxy(m);
             else PostResult(false, L"未知操作: " + action);
         } catch (const std::exception& ex) {
             PostResult(false, su_cvt(ex.what()));
