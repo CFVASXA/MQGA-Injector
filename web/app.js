@@ -35,6 +35,17 @@ $$('.host-card').forEach(card => {
     });
 });
 
+/* ---------- 注入模式选择 ---------- */
+let selectedMode = 'asar';
+$$('.mode-item').forEach(item => {
+    item.addEventListener('click', () => {
+        $$('.mode-item').forEach(m => m.classList.remove('selected'));
+        item.classList.add('selected');
+        selectedMode = item.dataset.mode;
+        log('已选择注入模式: ' + (selectedMode === 'asar' ? 'app.asar 替换' : 'MinHook 内存 hook'));
+    });
+});
+
 /* ---------- 工具 ---------- */
 function log(msg) {
     const el = $('log');
@@ -60,6 +71,7 @@ function send(action, extra = {}) {
     window.chrome.webview.postMessage({
         action,
         host: selectedHost,
+        mode: selectedMode,
         hostSourceDir: $('hostSourceDir').value.trim(),
         installDir: $('installDir').value.trim(),
         qqRoot: $('qqRoot').value.trim(),
