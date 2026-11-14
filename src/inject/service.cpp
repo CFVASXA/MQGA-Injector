@@ -76,6 +76,7 @@ InjectResult DoInstallMinHook(const AppConfig& c);
 InjectResult DoInstallProxyDll(const AppConfig& c);
 InjectResult DoInstallEnvInject(const AppConfig& c);
 InjectResult DoInstallIfeo(const AppConfig& c);
+InjectResult DoInstallManualMap(const AppConfig& c);
 
 InjectResult DoInstall(const AppConfig& c) {
     // MinHook 模式：内存注入（不修改文件）
@@ -93,6 +94,10 @@ InjectResult DoInstall(const AppConfig& c) {
     // IFEO 调试器注入：注册表合法机制
     if (c.mode == L"ifeo") {
         return DoInstallIfeo(c);
+    }
+    // Manual Map：手动映射 DLL（绕过 LoadLibrary 检测，QQ 无法拦截）
+    if (c.mode == L"manualmap") {
+        return DoInstallManualMap(c);
     }
     // app.asar 替换模式（原有逻辑）
     logger::Write(L"开始安装注入");
@@ -401,6 +406,73 @@ InjectResult DoInstallIfeo(const AppConfig& c) {
     }
     logger::Write(L"IFEO 已注册: " + debugger);
     return {true, L"IFEO 已注册（下次启动 QQ 时经启动器加载，卸载请在「卸载」里清除）"};
+}
+
+
+// ---- Manual Map 注入（绕过 LoadLibrary，QQ 无法拦截）----
+InjectResult DoInstallManualMap(const AppConfig& c) {
+    // 1. 启动 QQ（如果未运行）
+    if (!fsutil::QqRunning()) {
+        std::wstring exe = c.qqRoot + L"\QQ.exe";
+        if (!fsutil::FileExists(exe)) {
+            return Fail(L"QQ.exe 不存在: " + exe);
+        }
+        STARTUPINFOW si{}; si.cb = sizeof(si);
+        PROCESS_INFORMATION pi{};
+        if (!CreateProcessW(exe.c_str(), nullptr, nullptr, nullptr, FALSE, 0, nullptr,
+                            c.qqRoot.c_str(), &si, &pi)) {
+            return Fail(L"启动 QQ 失败 (err=" + std::to_wstring(GetLastError()) + L")");
+        }
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        Sleep(3000);
+    }
+
+    // 2. 找 QQ 主进程 PID
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE) return Fail(L"进程枚举失败");
+    DWORD qqPid = 0;
+    PROCESSENTRY32W pe{}; pe.dwSize = sizeof(pe);
+    if (Process32FirstW(snap, &pe)) {
+        do {
+            if (_wcsicmp(pe.szExeFile, L"QQ.exe") == 0) {
+                qqPid = pe.th32ProcessID;
+                break;
+            }
+        } while (Process32NextW(snap, &pe));
+    }
+    CloseHandle(snap);
+    if (qqPid == 0) return Fail(L"未找到 QQ 进程");
+
+    // 3. 调用 manual-map-full.exe（外部工具，已验证可行）
+    std::wstring tool = paths::DataDir() + L"manual-map-full.exe";
+    std::wstring hostDll = paths::DataDir() + L"host-minhook.dll";
+    if (!fsutil::FileExists(tool)) {
+        return Fail(L"Manual Map 工具不存在: " + tool);
+    }
+    if (!fsutil::FileExists(hostDll)) {
+        return Fail(L"宿主 DLL 不存在: " + hostDll);
+    }
+
+    // 调用：manual-map-full.exe <pid> <dll>
+    std::wstring cmd = L"\"" + tool + L"\" " + std::to_wstring(qqPid) + L" \"" + hostDll + L"\"";
+    STARTUPINFOW si{}; si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
+    std::wstring mutableCmd = cmd;
+    if (!CreateProcessW(nullptr, mutableCmd.data(), nullptr, nullptr, FALSE,
+                        CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+        return Fail(L"Manual Map 工具启动失败");
+    }
+    WaitForSingleObject(pi.hProcess, 10000);
+    DWORD exitCode = 1;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    if (exitCode != 0) {
+        return Fail(L"Manual Map 失败（exit code: " + std::to_wstring(exitCode) + L"）");
+    }
+    return {true, L"Manual Map 注入成功（QQ PID: " + std::to_wstring(qqPid) + L"，绕过 LoadLibrary 检测）"};
 }
 
 } // namespace inject
