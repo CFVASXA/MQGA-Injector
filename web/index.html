@@ -20,6 +20,7 @@
       <button class="nav-item active" data-page="dash"><span class="ico">▣</span><span>仪表盘</span></button>
       <button class="nav-item" data-page="host"><span class="ico">⬢</span><span>宿主管理</span></button>
       <button class="nav-item" data-page="plugins"><span class="ico">◈</span><span>插件</span></button>
+      <button class="nav-item" data-page="tools"><span class="ico">⛏</span><span>工具</span></button>
       <button class="nav-item" data-page="settings"><span class="ico">⚙</span><span>设置</span></button>
       <button class="nav-item" data-page="logs"><span class="ico">◫</span><span>日志</span></button>
     </nav>
@@ -55,16 +56,40 @@
               <div class="mode-icon">📦</div>
               <div class="mode-info">
                 <h3>app.asar 替换</h3>
-                <p>稳定可靠，QQ 更新时重新注入</p>
-                <span class="tag ok">推荐</span>
+                <p>实测通过：QQ 8 进程 0 无响应，QQ 更新时重新注入</p>
+                <span class="tag ok">推荐·已实测</span>
               </div>
             </div>
             <div class="mode-item" data-mode="minhook">
               <div class="mode-icon">🔧</div>
               <div class="mode-info">
                 <h3>MinHook 内存 hook</h3>
-                <p>不修改文件，每次启动需注入</p>
-                <span class="tag">实验性</span>
+                <p>实测：Notepad 成功，QQ 拒绝加载（有反注入保护）</p>
+                <span class="tag">QQ 受限</span>
+              </div>
+            </div>
+            <div class="mode-item" data-mode="proxydll">
+              <div class="mode-icon">🔀</div>
+              <div class="mode-info">
+                <h3>代理 ffmpeg.dll</h3>
+                <p>实测：函数签名复杂，QQ 报"无法找到入口"</p>
+                <span class="tag">实现复杂</span>
+              </div>
+            </div>
+            <div class="mode-item" data-mode="envinject">
+              <div class="mode-icon">🌐</div>
+              <div class="mode-info">
+                <h3>环境变量注入</h3>
+                <p>实测无效：QQ 自定义加载器不走 NODE_OPTIONS</p>
+                <span class="tag">已验证无效</span>
+              </div>
+            </div>
+            <div class="mode-item" data-mode="ifeo">
+              <div class="mode-icon">🛠</div>
+              <div class="mode-info">
+                <h3>IFEO 调试器注入</h3>
+                <p>注册表合法机制，需管理员权限</p>
+                <span class="tag">高级</span>
               </div>
             </div>
           </div>
@@ -182,6 +207,34 @@
         <div class="card">
           <h2>已安装插件</h2>
           <div id="pluginList" class="plugin-list">宿主安装后自动扫描。</div>
+        </div>
+      </section>
+
+      <!-- 工具 -->
+      <section class="page" id="page-tools">
+        <div class="card">
+          <h2>生成 preload.js（环境变量注入用）</h2>
+          <p class="hint" style="margin-bottom:14px">生成一个 preload 脚本到 <code>data\preload.js</code>，供 NODE_OPTIONS 注入模式加载宿主。</p>
+          <div class="actions">
+            <button class="btn primary" id="btnGenPreload">生成 preload.js</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>MinHook 宿主 DLL</h2>
+          <p class="hint" style="margin-bottom:14px">MinHook 模式需要 <code>data\host-minhook.dll</code>。检测是否就绪：</p>
+          <div id="minhookStatus" class="host-list">未检测</div>
+          <div class="actions">
+            <button class="btn" id="btnCheckMinhook">检测宿主 DLL</button>
+            <button class="btn" id="btnOpenData">打开 data 目录</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>代理 ffmpeg.dll</h2>
+          <p class="hint" style="margin-bottom:14px">代理模式需要 <code>data\ffmpeg-proxy.dll</code>（含全部导出转发的代理库）。</p>
+          <div id="proxyStatus" class="host-list">未检测</div>
+          <div class="actions">
+            <button class="btn" id="btnCheckProxy">检测代理 DLL</button>
+          </div>
         </div>
       </section>
 
