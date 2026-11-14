@@ -83,9 +83,9 @@ static void DoDownloadWork(const std::wstring& hostKey)
 
 // ---- 配置合并：以已存配置为底，仅覆盖消息里非空的字段 ----
 // 修复：此前直接用消息字段构造完整配置，JS 端漏带字段会把已存配置清空。
-static AppConfig MergeConfig(const std::map<std::wstring, std::wstring>& m)
+static core::AppConfig MergeConfig(const std::map<std::wstring, std::wstring>& m)
 {
-    AppConfig c = config::Load(); // 底：磁盘已存配置
+    core::AppConfig c = config::Load(); // 底：磁盘已存配置
     auto overlay = [&](const wchar_t* key, std::wstring& dst) {
         auto it = m.find(key);
         if (it != m.end() && !it->second.empty()) dst = it->second;
@@ -100,19 +100,25 @@ static AppConfig MergeConfig(const std::map<std::wstring, std::wstring>& m)
 
 static void ActInstall(const std::map<std::wstring, std::wstring>& m)
 {
-    AppConfig c = MergeConfig(m);
-    auto r = inject::DoInstall(c);
+    core::AppConfig c = MergeConfig(m);
+    auto r = inject::Install(c);
     // 只有成功才落盘配置——失败不该污染上次可用的配置
     if (r.ok) config::Save(c);
     PostResult(r.ok, r.message);
 }
 
-// disable/enable/uninstall：只操作文件系统，不动配置
-static void ActSimple(const std::map<std::wstring, std::wstring>& m,
-                      inject::InjectResult(*fn)(const AppConfig&))
+// 卸载/禁用/启用统一走服务门面（由 mode 决定具体实现）
+enum class Op { Uninstall, Disable, Enable };
+
+static void ActOp(const std::map<std::wstring, std::wstring>& m, Op op)
 {
-    AppConfig c = MergeConfig(m);
-    auto r = fn(c);
+    core::AppConfig c = MergeConfig(m);
+    core::InjectResult r{false, L""};
+    switch (op) {
+        case Op::Uninstall: r = inject::Uninstall(c); break;
+        case Op::Disable:   r = inject::Disable(c);   break;
+        case Op::Enable:    r = inject::Enable(c);    break;
+    }
     PostResult(r.ok, r.message);
 }
 
@@ -399,7 +405,7 @@ void HandleMessage(const std::string& utf8Json)
 
     // ready：回发配置（此时 JS 监听器已注册）
     if (action == L"ready") {
-        auto c = config::Load();
+        core::AppConfig c = config::Load();
         // 首次运行：qqRoot 为空时自动检测，免手动填
         if (c.qqRoot.empty()) {
             auto found = qq::FindQqRoot();
@@ -426,9 +432,9 @@ void HandleMessage(const std::string& utf8Json)
     std::thread([action, m]() {
         try {
             if (action == L"install")            ActInstall(m);
-            else if (action == L"disable")       ActSimple(m, &inject::DoDisable);
-            else if (action == L"enable")        ActSimple(m, &inject::DoEnable);
-            else if (action == L"uninstall")     ActSimple(m, &inject::DoUninstall);
+            else if (action == L"disable")       ActOp(m, Op::Disable);
+            else if (action == L"enable")        ActOp(m, Op::Enable);
+            else if (action == L"uninstall")     ActOp(m, Op::Uninstall);
             else if (action == L"download")      DoDownloadWork(m.count(L"host") ? m.at(L"host") : L"mqga");
             else if (action == L"locateQq")      ActLocateQq();
             else if (action == L"listVersions")  ActListVersions(m);
