@@ -20,6 +20,7 @@
       <button class="nav-item active" data-page="dash"><span class="ico">▣</span><span>仪表盘</span></button>
       <button class="nav-item" data-page="host"><span class="ico">⬢</span><span>宿主管理</span></button>
       <button class="nav-item" data-page="plugins"><span class="ico">◈</span><span>插件</span></button>
+      <button class="nav-item" data-page="settings"><span class="ico">⚙</span><span>设置</span></button>
       <button class="nav-item" data-page="logs"><span class="ico">◫</span><span>日志</span></button>
     </nav>
     <div class="sidebar-foot">
@@ -46,6 +47,29 @@
     <main id="content">
       <!-- 仪表盘 -->
       <section class="page active" id="page-dash">
+        <!-- 注入模式选择 -->
+        <div class="card mode-card">
+          <h2>注入模式</h2>
+          <div class="mode-grid">
+            <div class="mode-item selected" data-mode="asar">
+              <div class="mode-icon">📦</div>
+              <div class="mode-info">
+                <h3>app.asar 替换</h3>
+                <p>稳定可靠，QQ 更新时重新注入</p>
+                <span class="tag ok">推荐</span>
+              </div>
+            </div>
+            <div class="mode-item" data-mode="minhook">
+              <div class="mode-icon">🔧</div>
+              <div class="mode-info">
+                <h3>MinHook 内存 hook</h3>
+                <p>不修改文件，每次启动需注入</p>
+                <span class="tag">实验性</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid-2col">
           <div class="card host-card-wrap">
             <h2>宿主选择</h2>
@@ -123,6 +147,7 @@
         <div class="card quick-flow">
           <h2>使用流程</h2>
           <ol class="flow">
+            <li>选择注入模式（app.asar 替换 或 MinHook 内存 hook）</li>
             <li>退出 QQ（<a href="#" id="linkKillQq">点此退出全部 QQ</a>）</li>
             <li>「宿主管理」下载宿主</li>
             <li>确认路径与版本</li>
@@ -157,6 +182,25 @@
         <div class="card">
           <h2>已安装插件</h2>
           <div id="pluginList" class="plugin-list">宿主安装后自动扫描。</div>
+        </div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="page" id="page-settings">
+        <div class="card">
+          <h2>高级设置</h2>
+          <div class="fields">
+            <div class="field">
+              <label>MinHook 宿主 DLL 路径</label>
+              <input id="minhookDllPath" placeholder="data\host-minhook.dll" spellcheck="false">
+              <div class="hint">MinHook 模式使用的宿主 DLL（需自行编译）</div>
+            </div>
+            <div class="field">
+              <label>
+                <input type="checkbox" id="autoReinject"> QQ 更新后自动重新注入
+              </label>
+            </div>
+          </div>
         </div>
       </section>
 
