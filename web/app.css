@@ -208,3 +208,17 @@ code { background: #262a31; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .hidden { display: none !important; }
 body.is-busy .main-actions .btn { opacity: .55; pointer-events: none; }
 body.is-busy #btnLaunchQq, body.is-busy #btnLocate { opacity: .55; }
+/* 注入模式选择 */
+.mode-card { margin-bottom: 18px; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mode-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-card); cursor: pointer; transition: all .15s;
+}
+.mode-item:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+.mode-item.selected { border-color: var(--primary); background: rgba(61,125,232,.08); }
+.mode-icon { font-size: 24px; flex-shrink: 0; }
+.mode-info { flex: 1; min-width: 0; }
+.mode-info h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.mode-info p { font-size: 12px; color: var(--dim); margin: 0; }
