@@ -12,6 +12,10 @@ $$('.nav-item').forEach(el => {
         $$('.page').forEach(p => p.classList.remove('active'));
         el.classList.add('active');
         $('page-' + el.dataset.page).classList.add('active');
+        if (el.dataset.page === 'tools' && !busy) {
+            window.chrome.webview.postMessage({ action: 'checkMinhook' });
+            window.chrome.webview.postMessage({ action: 'checkProxy' });
+        }
         if (el.dataset.page === 'host' && !busy) {
             window.chrome.webview.postMessage({ action: 'listHosts' });
         }
@@ -163,6 +167,17 @@ window.chrome.webview.addEventListener('message', e => {
         $('hostSourceDir').value = data.path;
         return;
     }
+    if (ev === 'toolStatus') {
+        const el = $(data.kind === 'minhook' ? 'minhookStatus' : 'proxyStatus');
+        if (el) {
+            el.innerHTML = '<div class="host-row"><div class="host-icon' + (data.ready ? '' : ' alt') + '">' +
+                (data.ready ? '✓' : '✗') + '</div>' +
+                '<div style="flex:1"><div class="name">' + (data.ready ? '已就绪' : '未就绪') + '</div>' +
+                '<div class="path">' + (data.path || '') + '</div></div>' +
+                (data.ready ? '<span class="tag ok">可用</span>' : '<span class="tag">缺失</span>') + '</div>';
+        }
+        return;
+    }
     if (ev === 'hosts') {
         const list = $('hostList');
         const items = data.items || [];
@@ -311,6 +326,12 @@ $('linkKillQq').addEventListener('click', e => {
 });
 
 $('btnReinject').addEventListener('click', () => send('install'));
+
+/* ---------- 工具页 ---------- */
+if ($('btnGenPreload')) $('btnGenPreload').addEventListener('click', () => send('genPreload'));
+if ($('btnCheckMinhook')) $('btnCheckMinhook').addEventListener('click', () => send('checkMinhook'));
+if ($('btnCheckProxy')) $('btnCheckProxy').addEventListener('click', () => send('checkProxy'));
+if ($('btnOpenData')) $('btnOpenData').addEventListener('click', () => send('openFolder', { path: '__data__' }));
 
 /* ---------- 初始化 ---------- */
 if (!$('installDir').value) $('installDir').value = 'D:\\LiteLoaderQQNT';
