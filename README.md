@@ -2,7 +2,7 @@
 
 ![cover](cover.png)
 
-**640KB 单文件 GUI 注入器，把 LiteLoaderQQNT 兼容宿主注入 QQNT，无需修改 QQ 签名文件。**
+**640KB 单文件 GUI 注入器**，把 LiteLoaderQQNT 兼容宿主注入 QQNT，无需修改 QQ 签名文件。
 
 ![技术栈](https://img.shields.io/badge/C%2B%2B-Win32%2BWebView2-blue) ![体积](https://img.shields.io/badge/exe-640KB-green)
 
@@ -13,8 +13,11 @@
 - **禁用 / 恢复 / 卸载**：`.disabled` 互转，随时回退原生
 - **GitHub 下载宿主**：内置镜像链（gh-proxy → ghproxy.net → 直连），自动解压
 - **浏览目录**：原生目录对话框（每个路径输入框）
-- **实时校验**：400ms 防抖检查 `QQ.exe` / `src\main.js`，✓/✗ 徽标
+- **实时校验**：400ms 防抖检查 `QQ.exe` / `src\main.js`，✓/?/✗ 三态徽标
 - **QQ 更新跟随**：自动检测未注入新版本，一键重装
+- **插件列表**：扫描 `plugins/*/manifest.json` 展示已装插件
+- **宿主列表**：管理已下载的宿主（含完整性检测）
+- **一键启动 QQ / 一键退出全部 QQ**
 - **三层日志**：操作入口 / JS 闭环 / `[OK][FAIL]`（`data\install.log`）
 - **`--selftest` 自检**：一键全链路验证并留证
 
@@ -54,9 +57,16 @@ src/
 
 全部 WinHTTP/shell32 动态加载（离线 SDK 无对应 lib）；zip 解压自实现 RFC1951；ASAR 4MB 分块 SHA256；COM 跨线程经 UI 队列投递。
 
-## 宣传视频
+## 逻辑修复（v1.0.0）
 
-`MQGAInjector-promo.mp4`（33 秒，1080p）：片头品牌 + 操作演示 + 功能清单。
+- 配置合并保护（空字段不再清空已存配置）
+- 安装成功才落盘配置（失败不污染）
+- launchQq 防双开（QQ 在运行时提示）
+- killQq 杀 0 个如实报失败
+- 校验三态语义（阻断错误 vs 中性提示）
+- QQ 更新三态（未注入 / 已最新 / 有新版）
+- 安装成功后 UI 自动刷新状态
+- 修复路径转义 bug（`` `` 导致校验查错路径）
 
 ## 问题排查记录
 
